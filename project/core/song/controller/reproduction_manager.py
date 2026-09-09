@@ -364,6 +364,7 @@ class ReproductionManager:
     
     @classmethod
     def get_name(cls) -> str:
+        print(f"[REPRODUCTION MANAGER] current song key: {cls.state.current_song.key}")
         return SongRepository.get_song(cls.state.current_song.key)
 
     @classmethod

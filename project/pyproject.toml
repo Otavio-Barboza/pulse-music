@@ -1,6 +1,6 @@
 [project]
 name = "Pulse Music"
-version = "0.2.0"
+version = "0.2.4"
 dependencies = [
     "flet==0.28.3",
     "requests==2.32.5",
@@ -27,5 +27,6 @@ path = "."
 
 [tool.flet.app.windows]
 data = [
-"assets/app/audio_main.exe"
+    "assets/app/audio_main.exe",
+    "assets/app/information_main.exe"
 ]

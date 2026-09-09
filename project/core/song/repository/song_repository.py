@@ -55,7 +55,6 @@ class SongRepository:
             ]
 
 
-    # Onde é chamadas essas funções?    
     @classmethod
     def get_artist(cls, key_song : str):
         song_json: dict = Utils.sync_load_json(

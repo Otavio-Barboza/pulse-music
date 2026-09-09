@@ -9,7 +9,7 @@ from mutagen import File
 from mutagen.id3 import ID3, TIT2, TPE1, TALB, APIC, TXXX
 from mutagen.mp3 import MP3
 from pathlib import Path
-import asyncio, requests
+import asyncio, requests, base64
 
 
 class ExtractMetadata:
@@ -17,13 +17,13 @@ class ExtractMetadata:
     @classmethod
     def async_extract_metadata(cls, path: str | Path) -> dict[str | None]:
         """
-        Extrai título, artist e capa do áudio (se existir).
+        Extrai título, artist e cover do áudio (se existir).
 
         Retorna:
             dict {
                 title: str | None
                 artist: str | None
-                cover_path: str | None
+                cover: str | None
             }
         """
 
@@ -31,7 +31,6 @@ class ExtractMetadata:
         cover_destination = Path(
             AppPaths.ACCOUNT / AccountManager.accounts_cache.get("current_account") / "images" / "covers"
         )
-        # cover_destination.mkdir(parents = True, exist_ok = True)
 
         title = None
         artist = None
@@ -43,23 +42,30 @@ class ExtractMetadata:
             title = audio.get("title", [None])[0]
             artist = audio.get("artist", [None])[0]
 
-        # Extração da capa (principalmente MP3)
+        # Extração da cover (principalmente MP3)
         try:
             tags = ID3(audio_path)
+
             for tag in tags.values():
+
                 if isinstance(tag, APIC):
+
                     cover_path = cover_destination / f"{audio_path.stem}.jpg"
-                    with open(cover_path, "wb") as img:
-                        img.write(tag.data)
-                    cover_path = str(cover_path)
+
+                    if cover_path is not None:
+                        with open(cover_path, "wb") as img:
+                            img.write(tag.data)
+
+                        cover_path = str(cover_path)
+
                     break
         except Exception:
-            pass  # Sem capa ou formato não suportado
+            pass  # Sem cover ou formato não suportado
 
         return {
             "title": title,
             "artist": artist,
-            "capa": cover_path
+            "cover": cover_path
         }
 
     @classmethod
@@ -163,12 +169,13 @@ class ExtractMetadata:
         tags.delall("TXXX:PLAYER_ARTIST_ID")
         tags.delall("TXXX:PLAYER_ALBUM_ID")
 
-        # limpar imagens do player (matém capa original)
+        # limpar imagens do player (matém cover original)
         for tag in list(tags.values()):
             if isinstance(tag, APIC) and tag.desc.startswith("PLAYER_"):
                 tags.delall(tag.HashKey)
 
         print(title, artist, album)
+
         # escrever novos metadados
         if title is not None:
             tags.add(TIT2(encoding = 3, text = title))
@@ -196,70 +203,70 @@ class ExtractMetadata:
             """
             
             try:
-                r = requests.get(url, timeout=10)
-                return r.content
+                response = requests.get(url, timeout = 10)
+                return response.content
             except:
                 return None
         
         # _____ inserir imagem artist _____
         if url_img_artista_medium:
-            img = download(url_img_artista_medium)
+            _img_artist_medium = download(url_img_artista_medium)
             
-            if img:
+            if _img_artist_medium is not None:
                 tags.add(APIC(
                     encoding = 3,
                     mime = "image/jpeg",
                     type = 7,
                     desc = "PLAYER_ARTIST_MEDIUM",
-                    data = img   
+                    data = _img_artist_medium   
                 ))
         
         if url_img_artista_big:
-            img = download(url_img_artista_big)
+            _img_artist_big = download(url_img_artista_big)
             
-            if img:
+            if _img_artist_big is not None:
                 tags.add(APIC(
                     encoding = 3,
                     mime = "image/jpeg",
                     type = 7,
                     desc = "PLAYER_ARTIST_BIG",
-                    data = img
+                    data = _img_artist_big
                 ))
             
 
         # _____ inserir imagem album _____
         if url_img_album_medium:
-            img = download(url_img_album_medium)
+            _img_album_medium = download(url_img_album_medium)
             
-            if img:
+            if _img_album_medium is not None:
                 tags.add(APIC(
                     encoding = 3,
                     mime = "image/jpeg",
                     type = 4,
                     desc = "PLAYER_ALBUM_MEDIUM",
-                    data = img
+                    data = _img_album_medium
                 ))
                 
         if url_img_album_big:
-            img = download(url_img_album_big)
+            _img_album_big = download(url_img_album_big)
             
-            if img:
+            if _img_album_big is not None:
                 tags.add(APIC(
                     encoding = 3,
                     mime = "image/jpeg",
                     type = 4,
                     desc = "PLAYER_ALBUM_BIG",
-                    data = img
+                    data = _img_album_big
                 ))
 
-        if id_art:
+        if id_art is not None:
             tags.add(TXXX(
                 encoding = 3,
                 desc = "PLAYER_ARTIST_ID",
                 text = str(id_art)
             ))
 
-        if id_alb:
+        if id_alb is not None:
             tags.add(TXXX(
                 encoding = 3,
                 desc = "PLAYER_ALBUM_ID",
@@ -277,8 +284,6 @@ class ExtractMetadata:
 
         audio.save()
 
-        print(f"Música finalizada (registro de metadados): {file_path}")
-
     @classmethod
     def music_already_processed(cls, path: Path) -> bool:
         """
@@ -290,6 +295,7 @@ class ExtractMetadata:
         Returns:
             bool: True | False
         """
+
         try:
             tags = ID3(str(path))
 
@@ -347,16 +353,19 @@ class ExtractMetadata:
 
         if "TXXX:PLAYER_ARTIST_ID" in tags:
             tag = tags["TXXX:PLAYER_ARTIST_ID"]
+
             if tag.text:
                 result["artist_id"] = tag.text[0]
 
         if "TXXX:PLAYER_ALBUM_ID" in tags:
             tag = tags["TXXX:PLAYER_ALBUM_ID"]
+
             if tag.text:
                 result["album_id"] = tag.text[0]
         
         # percorre todas as imagens existentes.
         for tag in tags.values():
+
             if isinstance(tag, APIC):
                 if tag.type == 3:
                     result["cover"] = {
@@ -409,6 +418,7 @@ class ExtractMetadata:
         dic = {}
         # percorre todas as imagens imbutidas no arquivo 
         for tag in tags.values():
+
             destination_path = None
 
             if isinstance(tag, APIC):
@@ -416,7 +426,7 @@ class ExtractMetadata:
 
                 if tag.type == 3:
                     destination_path = AppPaths.ACCOUNT / AccountManager.accounts_cache.get("current_account") / "images" / "covers" / f"{cover_name}.jpg"
-                    dic["capa"] = destination_path
+                    dic["cover"] = destination_path
                 elif tag.desc == "PLAYER_ARTIST_MEDIUM":
                     destination_path = AppPaths.ACCOUNT / AccountManager.accounts_cache.get("current_account") / "images" / "artists" / f"{artist_id}.jpg"
                     dic["art"] = destination_path
@@ -427,15 +437,18 @@ class ExtractMetadata:
                     continue
 
                 # grava a imagem no diretório
-                with open(destination_path, "wb") as img:
-                    img.write(tag.data)
+                if destination_path is not None:
+                    with open(destination_path, "wb") as img:
+                        img.write(tag.data)
+                else:
+                    raise(
+                        f"Imágem inválida para ser salva: {destination_path}"
+                    )
 
         return dic
     
     @classmethod
-    def load_image_big_base64(cls, file_path: str, type: str):
-        import base64
-        
+    def load_image_big_base64(cls, file_path: str, type: str):        
         """
             Função para carregar as imagens do type big sem salvá-las fisicamente em algum diretório do dispositivo.
 

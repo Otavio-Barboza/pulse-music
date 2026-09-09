@@ -39,6 +39,13 @@ class Scanner:
         path: str = data.get('music').get('music_path')
         len_path: int = len(os.listdir(path))
 
+        if (
+            path is None
+            or len_path is None
+        ):
+            print(f"[SCANNER] values - path: {path}; len_path: {len_path}")
+            return
+        
         # atualizando quantidade de músicas na playlist
         data['music']['number_of_songs'] = len_path
 
