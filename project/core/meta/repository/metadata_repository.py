@@ -63,7 +63,7 @@ class MetadataRepository:
             str | None: path final salvo ou None se falhar
         """
 
-        if not url:
+        if url is None or not url:
             return None
 
         try:

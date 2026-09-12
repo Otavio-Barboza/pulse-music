@@ -17,9 +17,23 @@ from pathlib import Path
 import aiohttp
 
 
-async def resolve_no_artist_filtered_or_no_id3(id3_only_list : list[SongMetadata], filtered_only_list : list[SongMetadata], path : str):
+async def resolve_no_artist_filtered_or_no_id3(
+    id3_only_list : list[SongMetadata], 
+    filtered_only_list : list[SongMetadata], 
+    path : str
+):
     from core.meta.pipeline.pipeline import Pipeline
 
+    if (
+        (
+            id3_only_list is None and filtered_only_list is None
+        ) or (
+            len(filtered_only_list) == 0 and len(id3_only_list) == 0
+        )
+    ):
+        print(f"[PIPELINE PHASE 2] Lista id3_only_list/filtered_only_list são None ou estão vazias. \nmedium: {id3_only_list} \niconsistente: {filtered_only_list}\n")
+        return
+    
     ARTISTS_PATH: Path = AppPaths.ACCOUNT / AccountManager.accounts_cache.get("current_account") / "images" / "artists"
     ALBUMS_PATH: Path = AppPaths.ACCOUNT / AccountManager.accounts_cache.get("current_account") / "images" / "albums"
 
@@ -34,7 +48,7 @@ async def resolve_no_artist_filtered_or_no_id3(id3_only_list : list[SongMetadata
                 song = song,
                 strategy = artist_filtered_strategy()
             )
-            defined_artist = await choose_artist(
+            defined_artist: str = await choose_artist(
                 score = best_score,
                 best_item = best_item,
                 song = song
@@ -66,12 +80,10 @@ async def resolve_no_artist_filtered_or_no_id3(id3_only_list : list[SongMetadata
             else:
                 song.set_status(SongStatus.LOW)
 
-
+            print(f"[PIPELINE PHASE 2 FILTERED ONLY LIST] best_item: {best_item}\n")
 
             if best_item is not None:
-
-                print(best_item)
-
+                
                 image_medium_artist_destination = MetadataRepository.download_image(
                     url = best_item['artist']['picture_medium'],
                     destination_path = ARTISTS_PATH / f"{song.artist_id}.jpg"
@@ -101,18 +113,18 @@ async def resolve_no_artist_filtered_or_no_id3(id3_only_list : list[SongMetadata
                 )
 
 
-                ExtractMetadata.register_metadata_player(
-                    file_path = Path(song.song_path) / song.mp3_file,
-                    title = song.id3_data["filtered_data"].get("title") if song.id3_data["filtered_data"].get("title") is not None else song.mp3_file_filtered.get("title"),
-                    artist = song.defined_artist,
-                    album = song.album_metadata.get('name'),
-                    url_img_album_medium = best_item['album']['cover_medium'],
-                    url_img_album_big = song.album_metadata.get('big').get('link'),
-                    url_img_artista_medium = best_item['artist']['picture_medium'],
-                    url_img_artista_big = song.artist_metadata.get('big').get('link'),
-                    id_alb = song.artist_metadata.get('id_deezer'),
-                    id_art = song.album_metadata.get('id_deezer')
-                )
+            ExtractMetadata.register_metadata_player(
+                file_path = Path(song.song_path) / song.mp3_file,
+                title = song.id3_data["filtered_data"].get("title") if song.id3_data["filtered_data"].get("title") is not None else song.mp3_file_filtered.get("title"),
+                artist = song.defined_artist,
+                album = song.album_metadata.get('name'),
+                url_img_album_medium = None if best_item is None else best_item['album']['cover_medium'],
+                url_img_album_big = song.album_metadata.get('big').get('link'),
+                url_img_artista_medium = None if best_item is None else best_item['artist']['picture_medium'],
+                url_img_artista_big = song.artist_metadata.get('big').get('link'),
+                id_alb = song.album_metadata.get('id_deezer'),
+                id_art = song.artist_metadata.get('id')
+            )
 
         for song in id3_only_list:
 
@@ -153,9 +165,10 @@ async def resolve_no_artist_filtered_or_no_id3(id3_only_list : list[SongMetadata
             else:
                 song.set_status(SongStatus.LOW)
 
+            print(f"[PIPELINE PHASE 2 ID3 ONLY LIST] best_item: {best_item}\n")
 
             if best_item is not None:
-
+                
                 image_medium_artist_destination = MetadataRepository.download_image(
                     url = best_item['artist']['picture_medium'],
                     destination_path = ARTISTS_PATH / f"{song.artist_id}.jpg"
@@ -193,9 +206,10 @@ async def resolve_no_artist_filtered_or_no_id3(id3_only_list : list[SongMetadata
                     url_img_album_big = song.album_metadata.get('big').get('link'),
                     url_img_artista_medium = best_item['artist']['picture_medium'],
                     url_img_artista_big = song.artist_metadata.get('big').get('link'),
-                    id_alb = song.artist_metadata.get('id_deezer'),
-                    id_art = song.album_metadata.get('id_deezer')
+                    id_alb = song.album_metadata.get('id_deezer'),
+                    id_art = song.artist_metadata.get('id')
                 )
+
 
     await Pipeline.save_data({
         SongStatus.NO_ARTIST_FILTERED : id3_only_list,

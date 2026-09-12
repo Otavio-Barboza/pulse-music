@@ -53,7 +53,7 @@ class SongMetadata:
         },
 
         # Dados álbum
-        album_metadata: dict[str, str | Path] = {
+        album_metadata: dict[str, str | Path | None] = {
             "id_deezer" : None, 
             "name" : None, 
             "medium" : None, 

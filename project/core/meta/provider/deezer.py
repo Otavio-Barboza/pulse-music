@@ -31,10 +31,7 @@ class DeezerFont(MetadataSource):
             return None
         
     async def get_song(self, title: str, artist: str | None = None) -> dict:
-        query = f'track:"{title}"'
-
-        if artist:
-            query += f' artist:"{artist}"'
+        query = f"{title} {artist}" if artist else title
 
         data = await self._get(
             f'{BASE_URL}/search',
@@ -43,7 +40,18 @@ class DeezerFont(MetadataSource):
 
         if data is None:
             return None
-        
+
+        print(
+            "\n\n[DEEZER]",
+            title,
+            "-",
+            artist,
+            "|",
+            "resultado:", data is not None,
+            "|",
+            "tracks:", len(data["data"]) if data["data"] else 0
+        )    
+
         return {
             'track' : data['data'],
             'font' : 'deezer',

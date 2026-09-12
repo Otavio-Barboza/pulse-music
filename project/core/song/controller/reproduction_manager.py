@@ -11,7 +11,7 @@ from core.services.controllers.async_manager import AsyncManager
 
 # import geral
 from pathlib import Path
-import random, threading, time, asyncio
+import random, threading, time
 
 
 class ReproductionManager:
@@ -150,6 +150,7 @@ class ReproductionManager:
             ReproductionManager.current_font == ReproductionMode.ARTIST
             or ReproductionManager.current_font == ReproductionMode.ALBUM
         ):
+            print(f"[REPRODUCTION MANAGER] {Path(song.path)}")
             Player.load_song(
                 Path(song.path)
             )
@@ -157,9 +158,14 @@ class ReproductionManager:
             ReproductionManager.current_font == ReproductionMode.PLAYLIST
             or ReproductionManager.current_font == ReproductionMode.FAVORITE
         ):
-            Player.load_song(
-                Path(song.path) / f"{song.name}.mp3"
-            )
+            print(f"[REPRODUCTION MANAGER] {Path(song.path) / f'{song.name}.mp3'}")
+
+            if Path(song.path).suffix.lower() == ".mp3":
+                Player.load_song(song.path)
+            else:
+                Player.load_song(
+                    Path(song.path) / f"{song.name}.mp3"
+                )
         else:
             return
             

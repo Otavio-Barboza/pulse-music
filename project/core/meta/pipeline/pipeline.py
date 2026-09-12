@@ -139,8 +139,11 @@ class Pipeline:
         id: str | None = None
     ) -> list[SongMetadata]:
 
+        # Músicas que passam pela fase 0, ou seja, já foram alteradas pelo player em algum momento
         list_already_processed: list[SongMetadata] = []
-        musics_list = []
+
+        # músicas novas que não foram alteradas pelo player.
+        musics_list: list[SongMetadata] = []
 
         song: str
         for song in os.listdir(path) if len(object_list) == 0 else object_list:
@@ -150,33 +153,36 @@ class Pipeline:
 
             song = cls.normalize_song(song)
             song = os.path.basename(song)
-            # print(path)
             destination_file: Path = path / song
             
             if (Path(path) / song).suffix.lower() == ".mp3":
-                print(f"\nMúsica válida: {song}")
+
+                # print(f"\nMúsica válida: {song}")
 
                 # FASE 0 - verificação da existencia de data já alterados pelo próprio player, assim carregamento dos data já imbutidos.
                 if ExtractMetadata.music_already_processed(destination_file):
 
-                    mus = ExtractMetadata.extract_metadata_playter(destination_file)
-                    
-                    artista_id = CacheArtists.resolve_id(mus.get('artist'))
-                    
-                    dic = await asyncio.to_thread(
+                    # Extraí todos os dados da música que já foram embutidos.
+                    extract_metadata_song: dict[str, str | None] = ExtractMetadata.extract_metadata_player(destination_file)
+
+                    # vindo da variável extract_metadata_song, pega ou cria o ID do artista da música.
+                    artist_id: str = CacheArtists.resolve_id(extract_metadata_song.get("artist"))
+
+                    # Extração das imagens e gravação delas
+                    extract_images_song: dict[str, Path | None] = await asyncio.to_thread(
                         ExtractMetadata.extact_images_mp3,
                         destination_file, 
-                        mus, 
-                        song.replace('.mp3', ''),
-                        artista_id
+                        extract_metadata_song.get("album", "Nome não identificado"), 
+                        song.replace(".mp3", ""),
+                        artist_id
                     )
                     
                     list_already_processed.append(SongMetadata(
                         song_id = Task.return_track_id(destination_file),
                         playlist_id = id,
-                        artist_id = artista_id,
-                        song_title_id3_filtered = mus.get('title'),
-                        defined_artist = mus.get('artist'),
+                        artist_id = artist_id,
+                        song_title_id3_filtered = extract_metadata_song.get("title"),
+                        defined_artist = extract_metadata_song.get("artist"),
                         mp3_file = song,
                         song_path = str(path),
                         mp3_file_title = None,
@@ -192,55 +198,63 @@ class Pipeline:
                         status = SongStatus.HIGH,
                         original_song_title = song,
                         album_metadata = {
-                            'id_deezer' : mus.get('id_album'), 
-                            'name' : mus.get('album'), 
-                            'medium' : str(dic.get('alb')), 
-                            'big' : {
-                                'link' : mus.get('imagem_album_player_big'),
-                                'path' : str(destination_file)
+                            "id_deezer" : extract_metadata_song.get("album_id"), 
+                            "name" : extract_metadata_song.get("album"), 
+                            "medium" : str(
+                                extract_images_song.get("alb")
+                            ), 
+                            "big" : {
+                                "link" : None,
+                                "path" : str(destination_file)
                             }
                         },
                         artist_metadata = {
-                            'id_deezer' : mus.get('artist_id'), 
-                            'medium' : str(dic.get('art')), 
-                            'big' : {
-                                'link' : mus.get('imagem_album_player_medium'),
-                                'path' : str(destination_file)
+                            "id_deezer" : extract_metadata_song.get("artist_id"), 
+                            "medium" : str(
+                                extract_images_song.get("art")
+                            ), 
+                            "big" : {
+                                "link" : None,
+                                "path" : str(destination_file)
                             }
                         }
                     ))
                 else:
                     # FASE 1 - extração de metadados e classificação + filtragem tradicional
+
+                    # capta os metadados e salva a capa da música
                     data = await ExtractMetadata.async_extract(destination_file)
-    
-                    if data is not None:
-                        if data['title'] is not None:
-                            filtered_title = await Filtering.async_filter_title(name = data['title'])
-    
-                        if data['artist'] is not None:
-                            filtered_artist = await Filtering.async_filter_artist(artist = data['artist'])
-                    
-                        if filtered_artist is not None and filtered_title['artist'] is not None:
-                            musics_list.append(await Phase1.phase_1(
-                                mp3_file = song,
-                                song_metadata_id3 = filtered_title,
-                                original_artist_id3 = filtered_artist,
-                                song_path = path,
-                                playlist_id = id
-                            ))
-                        else:
-                            musics_list.append(await ExtractMetadata.async_organize_data(
-                                mp3_file = song,
-                                song_metadata_id3 = filtered_title,
-                                original_artist_id3 = filtered_artist,
-                                artist_id = '',
-                                status = await cls._async_classificar_presenca(
-                                    filtered_title = filtered_title, 
-                                    filtered_artist = filtered_artist    
-                                ),
-                                playlist_id = id,
-                                song_path = path
-                            ))
+
+                    if data["title"] is not None:
+                        filtered_title = await Filtering.async_filter_title(name = data["title"])
+
+                    if data["artist"] is not None:
+                        filtered_artist = await Filtering.async_filter_artist(artist = data["artist"])
+                
+                    if (
+                        filtered_artist is not None 
+                        and filtered_title["artist"] is not None
+                    ):
+                        musics_list.append(await Phase1.phase_1(
+                            mp3_file = song,
+                            song_metadata_id3 = filtered_title,
+                            original_artist_id3 = filtered_artist,
+                            song_path = path,
+                            playlist_id = id
+                        ))
+                    else:
+                        musics_list.append(await ExtractMetadata.async_organize_data(
+                            mp3_file = song,
+                            song_metadata_id3 = filtered_title,
+                            original_artist_id3 = filtered_artist,
+                            artist_id = '',
+                            status = await cls._async_classificar_presenca(
+                                filtered_title = filtered_title, 
+                                filtered_artist = filtered_artist    
+                            ),
+                            playlist_id = id,
+                            song_path = path
+                        ))
             else:
                 print(f"\nArquivo incompativel: ({Path(song).suffix})")
                 continue

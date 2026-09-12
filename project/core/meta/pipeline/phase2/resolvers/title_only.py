@@ -14,9 +14,19 @@ from pathlib import Path
 import aiohttp
 
 
-async def resolve_title_only(title_only_list: list[SongMetadata], path: Path):
+async def resolve_title_only(
+    title_only_list: list[SongMetadata], 
+    path: Path
+):
     from core.meta.pipeline.pipeline import Pipeline
 
+    if (
+        title_only_list is None
+        or len(title_only_list) == 0
+    ):
+        print(f"[PIPELINE PHASE 2] Lista apenas título é None ou está vaiza: {title_only_list}")
+        return
+    
     ARTISTS_PATH: Path = AppPaths.ACCOUNT / AccountManager.accounts_cache.get("current_account") / "images" / "artists"
     ALBUMS_PATH: Path = AppPaths.ACCOUNT / AccountManager.accounts_cache.get("current_account") / "images" / "albums"
 
@@ -32,7 +42,7 @@ async def resolve_title_only(title_only_list: list[SongMetadata], path: Path):
             )
 
 
-            if not result or not result.get('track'):
+            if not result or not result.get("track"):
                 song.set_status(SongStatus.LOW)
                 song.set_defined_artist("Artista Desconhecido")
                 song.set_artist_id(None)
@@ -93,6 +103,7 @@ async def resolve_title_only(title_only_list: list[SongMetadata], path: Path):
             song.set_status(status_artista_final)
             song.set_song_path(path)
 
+            print(f"[PIPELINE PHASE 2 TITLE ONLY] best_item: {top5}\n")
 
             image_medium_artist_destination = MetadataRepository.download_image(
                 url = top5[0]['artist']['picture_medium'],
@@ -124,17 +135,17 @@ async def resolve_title_only(title_only_list: list[SongMetadata], path: Path):
 
 
             ExtractMetadata.register_metadata_player(
-                    file_path = Path(song.song_path) / song.mp3_file,
-                    title = song.id3_data["filtered_data"].get("title") if song.id3_data["filtered_data"].get("title") is not None else song.mp3_file_filtered.get("title"),
-                    artist = song.defined_artist,
-                    album = song.album_metadata.get('name'),
-                    url_img_album_medium = top5[0]['album']['cover_medium'],
-                    url_img_album_big = song.album_metadata.get('big').get('link'),
-                    url_img_artista_medium = top5[0]['artist']['picture_medium'],
-                    url_img_artista_big = song.artist_metadata.get('big').get('link'),
-                    id_alb = song.artist_metadata.get('id_deezer'),
-                    id_art = song.album_metadata.get('id_deezer')
-                )
+                file_path = Path(song.song_path) / song.mp3_file,
+                title = song.id3_data["filtered_data"].get("title") if song.id3_data["filtered_data"].get("title") is not None else song.mp3_file_filtered.get("title"),
+                artist = song.defined_artist,
+                album = song.album_metadata.get('name'),
+                url_img_album_medium = top5[0]['album']['cover_medium'],
+                url_img_album_big = song.album_metadata.get('big').get('link'),
+                url_img_artista_medium = top5[0]['artist']['picture_medium'],
+                url_img_artista_big = song.artist_metadata.get('big').get('link'),
+                id_alb = song.album_metadata.get('id_deezer'),
+                id_art = song.artist_metadata.get('id')
+            )
             
     await Pipeline.save_data({
         SongStatus.TITLE_ONLY : title_only_list

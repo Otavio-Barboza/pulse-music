@@ -25,6 +25,16 @@ async def resolve_medium_and_inconsistent(
 
     from core.meta.pipeline.pipeline import Pipeline
 
+    if (
+        (
+            medium_list is None and inconsitent_list is None
+        ) or (
+            len(inconsitent_list) == 0 and len(medium_list) == 0
+        )
+    ):
+        print(f"[PIPELINE PHASE 2] Lista medium/inconsistentes são None ou estão vazias. \nmedium: {medium_list} \niconsistente: {inconsitent_list}\n")
+        return
+
     ARTISTS_PATH: Path = AppPaths.ACCOUNT / AccountManager.accounts_cache.get("current_account") / "images" / "artists"
     ALBUMS_PATH: Path = AppPaths.ACCOUNT / AccountManager.accounts_cache.get("current_account") / "images" / "albums"
 
@@ -69,6 +79,7 @@ async def resolve_medium_and_inconsistent(
             else:
                 song.set_status(SongStatus.LOW)
 
+            print(f"[PIPELINE PHASE 2] best_item: {best_item}\n")
 
             if best_item is not None:
 
@@ -110,8 +121,8 @@ async def resolve_medium_and_inconsistent(
                     url_img_album_big = song.album_metadata.get('big').get('link'),
                     url_img_artista_medium = best_item['artist']['picture_medium'],
                     url_img_artista_big = song.artist_metadata.get('big').get('link'),
-                    id_alb = song.artist_metadata.get('id_deezer'),
-                    id_art = song.album_metadata.get('id_deezer')
+                    id_alb = song.album_metadata.get('id_deezer'),
+                    id_art = song.artist_metadata.get('id')
                 )
 
         for song in inconsitent_list:
@@ -190,8 +201,8 @@ async def resolve_medium_and_inconsistent(
                     url_img_album_big = song.album_metadata.get('big').get('link'),
                     url_img_artista_medium = best_item['artist']['picture_medium'],
                     url_img_artista_big = song.artist_metadata.get('big').get('link'),
-                    id_alb = song.artist_metadata.get('id_deezer'),
-                    id_art = song.album_metadata.get('id_deezer')
+                    id_alb = song.album_metadata.get('id_deezer'),
+                    id_art = song.artist_metadata.get('id')
                 )
     
     await Pipeline.save_data({

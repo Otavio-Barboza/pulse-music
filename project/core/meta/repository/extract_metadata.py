@@ -5,8 +5,8 @@ from core.utils.path import AppPaths
 from core.meta.repository.tasks import Task
 
 # imports gerais
-from mutagen import File
-from mutagen.id3 import ID3, TIT2, TPE1, TALB, APIC, TXXX
+from mutagen import File, MutagenError
+from mutagen.id3 import ID3, TIT2, TPE1, TALB, APIC, TXXX, ID3NoHeaderError
 from mutagen.mp3 import MP3
 from pathlib import Path
 import asyncio, requests, base64
@@ -15,35 +15,53 @@ import asyncio, requests, base64
 class ExtractMetadata:
 
     @classmethod
-    def async_extract_metadata(cls, path: str | Path) -> dict[str | None]:
-        """
-        Extrai título, artist e cover do áudio (se existir).
+    def async_extract_metadata(cls, path: str | Path) -> dict[str, str | None]:
+        """_summary_
 
-        Retorna:
-            dict {
-                title: str | None
-                artist: str | None
-                cover: str | None
-            }
+        Args:
+            path (str | Path): caminho completo da música. Ex.: C:/Users/barbo/Music/sua_musica.mp3
+
+        Returns:
+            dict[str, str | None]: Dicionário com o título, artista e capa da música extraída.
         """
 
-        audio_path = Path(path)
-        cover_destination = Path(
+        data: dict[str, str | None] = {
+            "title" : None,
+            "artist" : None,
+            "cover" : None
+        }
+
+        # Validação de path, se vier como string ou outra forma tentará ser convertido para Path.
+        if isinstance(path, str):
+            audio_path = Path(path)
+        elif not isinstance(path, Path):
+            try:
+                audio_path = Path(path)
+            except (TypeError):
+                print(f"Caminho incompatível, não foi possível converter: {path}")
+                return data
+            except Exception as error:
+                print(f"Erro inesperado: {error}")
+                return data
+        else:
+            audio_path = path
+
+        cover_destination: Path = Path(
             AppPaths.ACCOUNT / AccountManager.accounts_cache.get("current_account") / "images" / "covers"
         )
-
-        title = None
-        artist = None
-        cover_path = None
 
         audio = File(audio_path, easy  = True)
 
         if audio:
-            title = audio.get("title", [None])[0]
-            artist = audio.get("artist", [None])[0]
+            data["title"] = audio.get("title", [None])[0]
+            data["artist"] = audio.get("artist", [None])[0]
 
         # Extração da cover (principalmente MP3)
         try:
+            cover_destination.mkdir(
+                parents = True, exist_ok = True
+            )
+
             tags = ID3(audio_path)
 
             for tag in tags.values():
@@ -52,21 +70,21 @@ class ExtractMetadata:
 
                     cover_path = cover_destination / f"{audio_path.stem}.jpg"
 
-                    if cover_path is not None:
-                        with open(cover_path, "wb") as img:
-                            img.write(tag.data)
+                    with open(cover_path, "wb") as img:
+                        img.write(tag.data)
 
-                        cover_path = str(cover_path)
-
+                    data["cover"] = str(cover_path)
                     break
-        except Exception:
-            pass  # Sem cover ou formato não suportado
+        except (ID3NoHeaderError, MutagenError):
+            print(f"[EXTRACT METADATA] Arquivo não possuí tags ID3 ou não é um MP3 suportado.")
+        except PermissionError:
+            print(f"Sem permissão para gravar em {cover_destination}")
+        except OSError as error:
+            print(f"Erro de sistema ao salvar a capa do áudio {audio_path.name}: {error}")
+        except Exception as error:
+            f"Erro inesperado: {error}"
 
-        return {
-            "title": title,
-            "artist": artist,
-            "cover": cover_path
-        }
+        return data
 
     @classmethod
     async def async_organize_data(
@@ -111,7 +129,7 @@ class ExtractMetadata:
         ) 
 
     @classmethod
-    async def async_extract(cls, path: Path):
+    async def async_extract(cls, path: Path) -> dict[str, str | None]:
         return await asyncio.to_thread(
             cls.async_extract_metadata,
             path
@@ -209,7 +227,7 @@ class ExtractMetadata:
                 return None
         
         # _____ inserir imagem artist _____
-        if url_img_artista_medium:
+        if url_img_artista_medium is not None:
             _img_artist_medium = download(url_img_artista_medium)
             
             if _img_artist_medium is not None:
@@ -221,7 +239,7 @@ class ExtractMetadata:
                     data = _img_artist_medium   
                 ))
         
-        if url_img_artista_big:
+        if url_img_artista_big is not None:
             _img_artist_big = download(url_img_artista_big)
             
             if _img_artist_big is not None:
@@ -235,7 +253,7 @@ class ExtractMetadata:
             
 
         # _____ inserir imagem album _____
-        if url_img_album_medium:
+        if url_img_album_medium is not None:
             _img_album_medium = download(url_img_album_medium)
             
             if _img_album_medium is not None:
@@ -247,7 +265,7 @@ class ExtractMetadata:
                     data = _img_album_medium
                 ))
                 
-        if url_img_album_big:
+        if url_img_album_big is not None:
             _img_album_big = download(url_img_album_big)
             
             if _img_album_big is not None:
@@ -307,7 +325,7 @@ class ExtractMetadata:
         return False
     
     @classmethod
-    def extract_metadata_playter(cls, file_path: Path) -> dict:
+    def extract_metadata_player(cls, file_path: Path) -> dict[str, str | None]:
         """
             Função para extrair os dados (metadados) que forma atribuídos manualmente pelo player
 
@@ -317,10 +335,14 @@ class ExtractMetadata:
         Returns:
             dict: dicionário contendo as informações extraídas do arquivo.
         """
-        result = {
+
+        result: dict[str, str | None] = {
             "title": None,
+
+            # nome do álbum e do artista
             "artist": None,
             "album": None,
+
             "validate_pipeline": False,
             "cover": None,
             
@@ -400,7 +422,13 @@ class ExtractMetadata:
         return result
     
     @classmethod
-    def extact_images_mp3(cls, file_path: str, name : dict, cover_name : str, artist_id : str | None = None):
+    def extact_images_mp3(
+        cls, 
+        file_path: str, 
+        album_name: dict, 
+        cover_name: str, 
+        artist_id : str | None = None
+    ) -> dict[str, Path | None]:
         """
             Extrai as imagens do arquivo MP3
 
@@ -415,7 +443,12 @@ class ExtractMetadata:
         if not tags:
             return
 
-        dic = {}
+        dic: dict[str, Path | None] = {
+            "cover" : None,
+            "art" : None,
+            "alb" : None
+        }
+
         # percorre todas as imagens imbutidas no arquivo 
         for tag in tags.values():
 
@@ -431,7 +464,7 @@ class ExtractMetadata:
                     destination_path = AppPaths.ACCOUNT / AccountManager.accounts_cache.get("current_account") / "images" / "artists" / f"{artist_id}.jpg"
                     dic["art"] = destination_path
                 elif tag.desc == "PLAYER_ALBUM_MEDIUM":
-                    destination_path = AppPaths.ACCOUNT / AccountManager.accounts_cache.get("current_account") / "images" / "albums" / f"{name.get('album')}.jpg"
+                    destination_path = AppPaths.ACCOUNT / AccountManager.accounts_cache.get("current_account") / "images" / "albums" / f"{album_name}.jpg"
                     dic["alb"] = destination_path
                 else:
                     continue

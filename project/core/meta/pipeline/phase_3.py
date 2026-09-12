@@ -8,7 +8,7 @@ from core.services.account_manager import AccountManager
 from core.meta.cache.cache_artists import CacheArtists
 from core.meta.repository.extract_metadata import ExtractMetadata
 from core.utils.path import AppPaths
-from core.meta.pipeline.helpers.analysis import analyze_consensus, choose_artist, calculate_phase3_score_with_artist, calculate_score_title_only_phase_3, sort_artists_by_title_only
+from core.meta.pipeline.helpers.analysis import analyze_consensus, calculate_phase3_score_with_artist, calculate_score_title_only_phase_3, sort_artists_by_title_only
 
 # imports gerais
 from pathlib import Path
@@ -97,40 +97,24 @@ class Phase3:
 
             for song in incomplete_list:
 
+                song.set_song_path(path)
+
                 filter = await Filtering.async_filter_title(song.mp3_file)
 
                 song.set_mp3_file_filtered(
                     title = filter["filtered_title"],
                     artist = filter["artist"]
                 )
-                song.set_song_path(path)
-                
-                if filter is None:
-                    song.set_status(SongStatus.LOW)
-                    song.set_score(0)
-                    song.set_defined_artist(
-                        Filtering.clean_feat(
-                            best_item["artist"]["name"]
-                        ) if best_item else Filtering.clean_feat(
-                            filter["artist"]
-                        ) or "Artista Desconhecido"
-                    )  
-                    song.set_artist_id(
-                        CacheArtists.resolve_id(
-                            song.defined_artist
-                        ) if song.defined_artist is not None else None
-                    )
-                    continue
 
                 best_item, best_score, title_only_data = await cls._resolve_phase_3(fonts, filter)
 
+                print(f"[PIPELINE PHASE 3] best_item: {best_item}\n")
+                
                 if best_item is None:
                     song.set_status(SongStatus.LOW)
                     song.set_score(0)
                     song.set_defined_artist(
                         Filtering.clean_feat(
-                            best_item["artist"]["name"]
-                        ) if best_item else Filtering.clean_feat(
                             filter["artist"]
                         ) or "Artista Desconhecido"
                     )  
@@ -146,8 +130,6 @@ class Phase3:
                     song.set_defined_artist(
                         Filtering.clean_feat(
                             best_item["artist"]["name"]
-                        ) if best_item else Filtering.clean_feat(
-                            filter["artist"]
                         ) or "Artista Desconhecido"
                     )  
                     song.set_artist_id(
@@ -161,6 +143,7 @@ class Phase3:
                     song.set_sim_1(title_only_data["sim_1"])
                     song.set_sim_2(title_only_data["sim_2"])
                     song.set_consensus(title_only_data["consensus"])
+
                     
                     artist_image_medium_destination = MetadataRepository.download_image(
                         url = best_item["artist"]["picture_medium"],
@@ -194,8 +177,8 @@ class Phase3:
                         url_img_album_big = song.album_metadata.get("big").get("link"),
                         url_img_artista_medium = best_item["artist"]["picture_medium"],
                         url_img_artista_big = song.artist_metadata.get("big").get("link"),
-                        id_alb = song.artist_metadata.get("id_deezer"),
-                        id_art = song.album_metadata.get("id_deezer")
+                        id_alb = song.album_metadata.get("id_deezer"),
+                        id_art = song.artist_metadata.get("id")
                     )
                 # 🔹 CASO COM ARTISTA
                 else:
@@ -203,8 +186,6 @@ class Phase3:
                     song.set_defined_artist(
                         Filtering.clean_feat(
                             best_item["artist"]["name"]
-                        ) if best_item else Filtering.clean_feat(
-                            filter["artist"]
                         ) or "Artista Desconhecido"
                     )  
                     song.set_artist_id(
@@ -222,6 +203,8 @@ class Phase3:
                     else:
                         song.set_status(SongStatus.LOW)       
 
+                    print(f"[PIPELINE PHASE 3] best_item: {best_item}\n")
+
                     artist_image_medium_destination = MetadataRepository.download_image(
                         url = best_item["artist"]["picture_medium"],
                         destination_path = ARTISTS_PATH / f"{song.artist_id}.jpg"
@@ -254,8 +237,8 @@ class Phase3:
                         url_img_album_big = song.album_metadata.get("big").get("link"),
                         url_img_artista_medium = best_item["artist"]["picture_medium"],
                         url_img_artista_big = song.artist_metadata.get("big").get("link"),
-                        id_alb = song.artist_metadata.get("id_deezer"),
-                        id_art = song.album_metadata.get("id_deezer")
+                        id_alb = song.album_metadata.get("id_deezer"),
+                        id_art = song.artist_metadata.get("id")
                     )
 
         await Pipeline.save_data({

@@ -15,6 +15,8 @@ async def resolve_song(
         artist = artist_for_search
     )
 
+    print(f"[RESOLVE_SONG]: {song.id3_data['filtered_data'].get('title')} - {artist_for_search}")
+
     if not result.get('track'):
         return None, 0
     
@@ -28,4 +30,5 @@ async def resolve_song(
             best_score = score
             best_item = item
     
+    print(f"[RESOLVE_SONG]: pós executar a seleção do melhor: {best_item}")
     return best_item, best_score

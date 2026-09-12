@@ -84,21 +84,27 @@ class SongRepository:
         song_json: dict = Utils.sync_load_json(
             AppPaths.ACCOUNT / AccountManager.accounts_cache.get("current_account") / "music" /"songs.json"
         )
-        
+
+        _song = None
+
         key: str
         item: dict
         for key, item in song_json.items():
             if key == key_song:
-                song = item
+                _song = item
                 break
 
-        if song["id3_data"]["filtered_data"].get("title") is not None:
-            return song["id3_data"]["filtered_data"].get("title")
+        if _song is None:
+            return "Título não Identificado"
 
-        if song["mp3_file_filtered"].get("title") is not None:
-            return song["mp3_file_filtered"].get("title")
+        elif _song["id3_data"]["filtered_data"].get("title") is not None:
+            return _song["id3_data"]["filtered_data"].get("title")
 
-        if song["id3_data"]["original_data"].get("title") is not None:
-            return song["id3_data"]["original_data"].get("title")
+        elif _song["mp3_file_filtered"].get("title") is not None:
+            return _song["mp3_file_filtered"].get("title")
 
-        return song["mp3_file_filtered"].get("title")
+        elif _song["id3_data"]["original_data"].get("title") is not None:
+            return _song["id3_data"]["original_data"].get("title")
+
+        else:
+            _song["mp3_file_filtered"].get("title")
