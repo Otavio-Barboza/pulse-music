@@ -142,7 +142,7 @@ async def main(page: ft.Page):
 
     AudioProcess.start()
     InformationProcess.start()
-    # AsyncManager.start()
+    AsyncManager.start()
 
     
     """  Validar login  """
