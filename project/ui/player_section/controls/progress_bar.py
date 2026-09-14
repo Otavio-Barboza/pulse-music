@@ -85,10 +85,14 @@ class CompactProgressBar(ft.Container):
         
         if (
             ReproductionManager.state.current_time > 0 
-             and
-            ReproductionManager.state.total_time != 0.0
+            and ReproductionManager.state.total_time != 0.0
+            and self.slider.max is not None
         ):
-            self.slider.value = min(ReproductionManager.state.current_time, ReproductionManager.state.total_time)
+            self.slider.value = min(
+                ReproductionManager.state.current_time,
+                ReproductionManager.state.total_time,
+                self.slider.max
+            )
 
         self.update()
 
