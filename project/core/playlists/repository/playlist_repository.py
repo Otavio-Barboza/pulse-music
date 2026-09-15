@@ -110,8 +110,7 @@ class PlaylistRepository:
         Returns:
             Playlist: Objeto Playlist()
         """
-
-        
+  
         # Salvando dados do playlists.json
         dados = Utils.sync_load_json(
             path = AppPaths.ACCOUNT / AccountManager.accounts_cache["current_account"] / "playlists.json"
@@ -119,14 +118,14 @@ class PlaylistRepository:
 
         new_id, id_num = CreatePlaylist.generate_id(data = dados)
 
-        PASTA_PLAYLIST = AppPaths.ACCOUNT / AccountManager.accounts_cache["current_account"] / "playlists" / new_id
-        Utils.create_path(PASTA_PLAYLIST)
+        PLAYLIST_PATH = AppPaths.ACCOUNT / AccountManager.accounts_cache["current_account"] / "playlists" / new_id
+        Utils.create_path(PLAYLIST_PATH)
 
         dados["latest_id"] = id_num
 
         dados["playlists"][new_id] = {
             "name" : name,
-            "path" : str(PASTA_PLAYLIST)
+            "path" : str(PLAYLIST_PATH)
         }
         dados["latest_actualization"] = CreatePlaylist.generate_date()
 
@@ -134,7 +133,6 @@ class PlaylistRepository:
             path = AppPaths.ACCOUNT / AccountManager.accounts_cache["current_account"] / "playlists.json",
             data = dados
         )
-
 
         # salvando os dados do config_json
         qtde = CreatePlaylist.count_number_of_songs(Path(music_path))
@@ -157,7 +155,7 @@ class PlaylistRepository:
         return Playlist(
             id = new_id,
             name = name,
-            path = PASTA_PLAYLIST
+            path = PLAYLIST_PATH
         )
 
     @classmethod
