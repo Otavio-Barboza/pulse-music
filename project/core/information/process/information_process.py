@@ -83,18 +83,6 @@ class InformationProcess:
 
     @classmethod
     def send(cls, data: dict, timeout = 10):
-        # start = time.time()
-
-        # while cls._connection is None:
-        #     if time.time() - start >= timeout:
-        #         raise ConnectionError(
-        #             "Não foi possível conectar ao information_main.exe"
-        #         )
-
-        #     time.sleep(0.1)
-        # else:
-        #     print("Conectado ao information_main.exe... executando comando...")
-
         if cls._connection is None:
             raise(
                 "Processo de informações não conectado."

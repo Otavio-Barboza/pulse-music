@@ -5,22 +5,20 @@ from ui.settings.screen_settings import ScreenSettings
 from ui.navigation.tabs import TabsNavigation
 from ui.others.colors import color
 from ui.others.overlay_login import OverlayLogin
+from ui.loading.loading_services import LoadingServices
 
 # imports de arquivos back-end
 from core.utils.utils import Utils
 from core.utils.path import AppPaths
 from core.services.account_manager import AccountManager
 from core.services.controllers.resize_manager import ResizeManager
-from core.song.model.audio import AudioProcess
 from core.song.controller.reproduction_manager import ReproductionManager
 from core.meta.models.scanner_model import ScannerModel
 from core.meta.cache.global_cache import cache_metadata
 from core.meta.cache.cache_artists import CacheArtists
 from core.lyrics.cache.cache_lyrics import CacheLyrics
 from core.services.controllers.state_app import StateApp
-from core.services.controllers.async_manager import AsyncManager
 from core.network.connection import Connection
-from core.information.process.information_process import InformationProcess
 
 # imports de bibliotecas  gerais
 from pathlib import Path
@@ -43,7 +41,7 @@ def open_profile(current_id: str) -> dict:
 
 async def main(page: ft.Page):
 
-    """  Configurações da page, gerais da aplicação  """
+    """  Configurações da page e variáveis globais  """
 
     page.title = "Pulse Music"
 
@@ -61,7 +59,9 @@ async def main(page: ft.Page):
     page.theme = ft.Theme(
         font_family = "google_sans_flex"
     )
-    
+
+    _initializate_services: bool = False
+
 
     """  Declarar funções auxiliares  """
 
@@ -137,19 +137,38 @@ async def main(page: ft.Page):
     async def start_scanner():
         await ScannerModel.async_start_scanner(page)
 
+    #  iniciando os serviços do player.
+    async def open_services_overlay():
+        overlay = LoadingServices(page)
 
-    """  INICIALIZAÇÃO DE SERVIÇOS AUXILIARES  """
+        page.overlay.append(overlay)
+        page.update()
 
-    AudioProcess.start()
-    InformationProcess.start()
-    AsyncManager.start()
+        await asyncio.sleep(1)
+
+        await overlay.start()
+        await overlay.services_finished.wait()
+
+        await asyncio.sleep(0.5)
+
+        overlay.opacity = 0
+        overlay.update()
+
+        await asyncio.sleep(1)
+
+        page.overlay.remove(overlay)
+        page.update()
 
     
     """  Validar login  """
 
     # carrega uma overlay dinâmivo para o usuário fazer o login via google, quando terminar acontece uma animação fade out e carrega o restante de todo o app.
     if not await validate_login():
+        """  INICIALIZAÇÃO DE SERVIÇOS AUXILIARES  """
+        await open_services_overlay()
         await open_overlay()
+
+        _initializate_services = True
 
 
     """  Carregar cache  """
@@ -225,6 +244,11 @@ async def main(page: ft.Page):
     
     page.run_task(start_scanner)
     page.run_task(start_connection)
+
+
+    """  INICIALIZAÇÃO DE SERVIÇOS AUXILIARES  """
+    if not _initializate_services:
+        await open_services_overlay()
 
 
 if __name__ == "__main__":
