@@ -8,7 +8,7 @@ from core.utils.path import AppPaths
 from core.information.service.information_service import InformationService
 
 # import geral
-from deep_translator.exceptions import TranslationNotFound
+from deep_translator.exceptions import TranslationNotFound, TooManyRequests
 import requests, asyncio, lyricsgenius
 
 
@@ -19,11 +19,7 @@ class LyricsServices:
     genius = None
     translator = Translator()
 
-    AVAILABLE_LANGUAGES: dict[str, str] = {}    
-    for language, uf in translator._languages.items():
-        AVAILABLE_LANGUAGES[
-            language.replace(" ", "_")
-        ] = uf
+    AVAILABLE_LANGUAGES: dict[str, str] = translator.get_supported_languages(as_dict = True)
 
     callbacks = {}
 
@@ -75,7 +71,36 @@ class LyricsServices:
         cls.translator.target = target
             
             
-    # Operações
+    # Operações, gets e splits
+    def split_lyric(lyric: str, max_length: int = 500) -> list[str]:
+        lines = lyric.splitlines()
+
+        chunks = []
+        current_chunk = ""
+
+        for line in lines:
+            separator = "\n" if current_chunk else ""
+            new_chunk = current_chunk + separator + line
+
+            if len(new_chunk) <= max_length:
+                current_chunk = new_chunk
+                continue
+
+            if current_chunk:
+                chunks.append(current_chunk)
+
+            # Caso uma linha sozinha ultrapasse o limite
+            while len(line) > max_length:
+                chunks.append(line[:max_length])
+                line = line[max_length:]
+
+            current_chunk = line
+
+        if current_chunk:
+            chunks.append(current_chunk)
+
+        return chunks
+    
     @classmethod
     async def get_lyric(cls, data: dict) -> str | None:
         try:    
@@ -149,48 +174,50 @@ class LyricsServices:
         # tratamento das tentativas de busca pela letra da música.
         max_attempts: int = 5
         timeout: int = 15
-        retry_delay: int = 1
-        
+        retry_delay: int = 5
+
+        chunks = cls.split_lyric(lyric)
+
         for attempt in range(1, max_attempts + 1):
             
-            try:
-                # Callcback do front-end
-                
-                # informar que a tradução está sendo realizada.
-                
-                translated_lyric: str | None = await asyncio.wait_for(
-                    asyncio.to_thread(
-                        cls.translator.translate,
-                        lyric
-                    ),
-                    timeout = timeout
-                ) 
-                
-                if (
-                    not translated_lyric
-                    or translated_lyric.startswith("Error ")
-                ):
-                    raise TranslationNotFound(lyric)
-                
-                return translated_lyric
+            try:       
+                translated_chunks: list[str] = []
+
+                for chunk in chunks:        
+                    # informar que a tradução está sendo realizada.
+                    translated_lyric: str | None = await asyncio.wait_for(
+                        asyncio.to_thread(
+                            cls.translator.translate,
+                            chunk
+                        ),
+                        timeout = timeout
+                    ) 
+                    
+                    if (
+                        translated_lyric is None
+                        or translated_lyric.startswith("Error ")
+                    ):
+                        raise TranslationNotFound(lyric)
+                    
+                    translated_chunks.append(translated_lyric)
+
+                return "\n".join(translated_chunks)
             except (
                 TranslationNotFound, 
-                asyncio.TimeoutError        
+                asyncio.TimeoutError
             ):
                 if attempt >= max_attempts:
-                     # CALLBACK FRONT-END:
-                    # informar que todas as tentativas falharam.
-                    #
-                    # Aqui a UI pode mostrar:
-                    # "Não foi possível traduzir a letra.
-                    #  Tente novamente mais tarde."
-                    
                     return 
+            except TooManyRequests:
+                print("Limite de requisições atingido. Aguardando...")
+                await asyncio.sleep(10)
                 
             await asyncio.sleep(retry_delay)
         else:
             return None
-        
+
+
+    # Armazenamento da letra musical
     @classmethod
     async def save_lyric(cls, lyric: str, key_song: str, original_lyric: str):
         existing_letters = await Utils.async_load_json(
@@ -228,6 +255,8 @@ class LyricsServices:
             path = AppPaths.ACCOUNT / AccountManager.accounts_cache.get("current_account") / "music" / "lyrics.json"
         )
 
+
+    # start da tradução da letra
     @classmethod
     async def start_translation(cls, language: str):
         from core.song.controller.reproduction_manager import ReproductionManager

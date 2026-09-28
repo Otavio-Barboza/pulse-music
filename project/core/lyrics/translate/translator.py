@@ -1,12 +1,12 @@
 # import geral
-from deep_translator import GoogleTranslator
+from deep_translator import MyMemoryTranslator
 
 
-class Translator(GoogleTranslator):
+class Translator(MyMemoryTranslator):
     def __init__(
         self, 
         source = "auto", 
-        target = "en", 
+        target = "en-US", 
         proxies = None, 
         **kwargs
     ):
