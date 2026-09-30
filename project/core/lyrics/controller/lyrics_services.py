@@ -141,7 +141,14 @@ class LyricsServices:
         except Exception as erro:
             print(f"Erro: {erro}")
             return 
-    
+
+    @classmethod
+    def _translate_chunk(cls, chunk: str) -> str | None:
+        try:
+            return cls.translator.translate(chunk)
+        except StopIteration:
+            return None
+        
     @classmethod
     async def translate(cls, lyric: str) -> str | None:
         """
@@ -185,14 +192,19 @@ class LyricsServices:
 
                 for chunk in chunks:        
                     # informar que a tradução está sendo realizada.
-                    translated_lyric: str | None = await asyncio.wait_for(
-                        asyncio.to_thread(
-                            cls.translator.translate,
-                            chunk
-                        ),
-                        timeout = timeout
-                    ) 
-                    
+                    try:
+                        translated_lyric: str | None = await asyncio.wait_for(
+                            asyncio.to_thread(
+                                cls._translate_chunk,
+                                chunk
+                            ),
+                            timeout = timeout
+                        ) 
+                    except TypeError as error:
+                        if "StopIteration" in str(error):
+                            raise TranslationNotFound(lyric)
+                        raise
+
                     if (
                         translated_lyric is None
                         or translated_lyric.startswith("Error ")
