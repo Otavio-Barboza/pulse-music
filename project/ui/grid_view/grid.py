@@ -120,7 +120,6 @@ class GridImages(ft.GridView):
         song_list: list[Song] = []
 
         if self.mode == GridMode.ARTIST:
-            
             for key, song in data.get(event.control.data).items():
                 if key == 'songs':
                     for music in song:
@@ -135,9 +134,7 @@ class GridImages(ft.GridView):
                                 key = music.get('key')
                             )
                         )
-
-        elif self.mode == GridMode.ALBUM:
-            
+        elif self.mode == GridMode.ALBUM:   
             for song in data.get(event.control.data).values():
                 for song_path in song:
                     song_list.append(

@@ -23,11 +23,18 @@ class Reproduction:
     
     @classmethod
     def load_songs_from_mode(cls, mode: ReproductionMode, list: list[Song]):
-        if not list:
-            return
+        if not list: return
         
         cls._lists_modes_playbacks[mode].clear()
+        print(
+            "[REPRODUCTION]: Limpando a lista: \n"
+            f"{cls._lists_modes_playbacks[mode]}"
+        )
         cls._lists_modes_playbacks[mode].extend(list)
+        print(
+            "[REPRODUCTION]: Adicicionando músicas à lista: \n"
+            f"{[song.name for song in (cls._lists_modes_playbacks[mode] or [])]}"
+        )
 
     @classmethod
     def return_songs_for_mode(cls) -> list[Song] | None:

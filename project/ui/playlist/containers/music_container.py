@@ -152,6 +152,7 @@ class RowContainer(ft.Container):
 
             print("Está identificando a diferença de modos.")
             print(f"{e.control.data.mode}  x  {ReproductionMode.FAVORITE.value}")
+            
             if e.control.data.mode == ReproductionMode.FAVORITE.value:
 
                 Reproduction.set_current_reproduction(ReproductionMode.FAVORITE)
@@ -161,13 +162,17 @@ class RowContainer(ft.Container):
 
         print(f"Valor da fonte atual: {ReproductionManager.current_font}")
 
-        if ReproductionManager.current_font != e.control.data.mode:
-            ReproductionManager.set_font()
+        # if ReproductionManager.current_font != e.control.data.mode:
+        ReproductionManager.set_font()
 
         if ReproductionManager.current_font is ReproductionMode.NOT_REPRODUCE:
             print('Sem reprodução definida')
             return
 
+        print(
+            "[music_container.py]: chave da música atual: \n"
+            f"{e.control.data.key}"
+        )
         ReproductionManager.get_index(e.control.data.key)
         ReproductionManager.play()
 
