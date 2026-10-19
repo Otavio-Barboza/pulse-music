@@ -74,6 +74,16 @@ async def main(page: ft.Page):
         page.overlay.append(ScreenSettings(page))
         page.update()
 
+
+    def set_win_width(value: int = 500):
+        page.window.min_width = value
+        page.update()
+
+        print(
+            f"[MAIN]: novo tamanho mínimo da janela: {page.window.min_width}"
+        )
+
+
     # carregamento de cache
     async def load_cache():
         data: dict = await Utils.async_load_json(
@@ -84,11 +94,15 @@ async def main(page: ft.Page):
         await CacheArtists.load()
         CacheLyrics.load_cache()
 
+
     # função para validar o login
     async def validate_login() -> bool:
         """
             Função que valida o login. 
-              →  Retorna True se houver alguma conta logada. 
+              →  Retorna True se houver alguma conta logada. StateApp.notify(
+                          event = "set_min_width",
+                          data = 860
+                      )
               →  Retorna False de nenhuma conta existir/estiver logada.
         """
 
@@ -107,6 +121,7 @@ async def main(page: ft.Page):
         )
 
         return True
+
         
     # overlay do primeiro login
     async def open_overlay():
@@ -125,17 +140,21 @@ async def main(page: ft.Page):
         page.overlay.remove(_overlay)
         page.update()
 
+
     # alteração de conta
     def when_alter_account():
         tabs.reload()
+
 
     # validar conexão
     async def start_connection():
         await Connection.start_loop_connection(page)
 
+
     # validando argumento do scanner
     async def start_scanner():
         await ScannerModel.async_start_scanner(page)
+
 
     #  iniciando os serviços do player.
     async def open_services_overlay():
@@ -225,6 +244,10 @@ async def main(page: ft.Page):
     StateApp.register_callback(
         event = 'actualization_components_when_alter_account',
         func = when_alter_account
+    )
+    StateApp.register_callback(
+        event = "set_min_width",
+        func = set_win_width
     )
 
     tabs.connect()

@@ -68,6 +68,16 @@ class OverlayLogin(ft.Container):
             ]
         )
 
+
+    def will_unmount(self):
+        from core.services.controllers.state_app import StateApp
+        
+        StateApp.notify(
+            event = "set_min_width",
+            data = 500
+        )
+    
+    
     async def login(self, event):
         await login_google(self.page)
         self.login_finished.set()

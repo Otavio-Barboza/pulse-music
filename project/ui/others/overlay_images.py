@@ -120,10 +120,17 @@ class OverlayImages(ft.Container):
 
 
     def close_overlay(self, event):
+        from core.services.controllers.state_app import StateApp
+
         GridState.set_current_mode(self.mode)
         GridState.set_open_grid(OpenGrid.CLOSE)
 
         GridState.notify(
             event = "alter_grid_content",
             data = None
+        )
+
+        StateApp.notify(
+            event = "set_min_width",
+            data = 500
         )

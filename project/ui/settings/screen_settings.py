@@ -49,6 +49,21 @@ class ScreenSettings(ft.Container):
             ]
         )
 
+
+    def did_mount(self):
+        StateApp.notify(
+            event = "set_min_width",
+            data = 860
+        )
+        
+
+    def will_unmount(self):
+        StateApp.notify(
+            event = "set_min_width",
+            data = 500
+        )
+
+
     def _side_menu(self):
         """
             Cria o menú lateral das configurações
@@ -115,6 +130,7 @@ class ScreenSettings(ft.Container):
             )
         )
 
+
     def _create_button(self, text : str, section_id : str):
         """
             Cria os botões do menú lateral das configurações e depois armazena eles no dict self.buttons
@@ -155,6 +171,7 @@ class ScreenSettings(ft.Container):
         self.buttons[section_id] = button
         return button
 
+
     def _select(self, section: str):
         """
             Quando é clicado em algum botão a ação é registrada no ouvinte do StateApp com o section 
@@ -163,6 +180,7 @@ class ScreenSettings(ft.Container):
             section (str): Seção responsável de conteúdo
         """
         StateApp.select_config_section(section)
+
 
     def _when_section_changes(self, section_id: str):
         """

@@ -213,6 +213,13 @@ class GridImages(ft.GridView):
                 page = self.page
             ) 
         )
+
+        from core.services.controllers.state_app import StateApp
+
+        StateApp.notify(
+            event = "set_min_width",
+            data = 860
+        )
         
         Reproduction.load_songs_from_mode(
             mode = playlist_mode,
