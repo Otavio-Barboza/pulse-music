@@ -47,6 +47,7 @@ async def main(page: ft.Page):
 
     page.window.min_width = 500
     page.window.min_height = 900
+    page.window.maximized = True
     page.padding = 0
 
     page.bgcolor = color.preto_puro_4
@@ -84,6 +85,15 @@ async def main(page: ft.Page):
         )
 
 
+    def set_maximized_window(value: bool = True):
+        page.window.maximized = value
+        page.update()
+        
+        print(
+            f"[MAIN]: janela maximizada: {page.window.maximized}"
+        )
+
+
     # carregamento de cache
     async def load_cache():
         data: dict = await Utils.async_load_json(
@@ -108,8 +118,7 @@ async def main(page: ft.Page):
 
         current_id = AccountManager.read_current_account_index()
 
-        if current_id is None:
-            return False
+        if current_id is None: return False
         
         data = AccountManager.search_account_index(current_id)
         profile = open_profile(current_id)
@@ -248,6 +257,10 @@ async def main(page: ft.Page):
     StateApp.register_callback(
         event = "set_min_width",
         func = set_win_width
+    )
+    StateApp.register_callback(
+        event = "set_maximized_window",
+        func = set_maximized_window
     )
 
     tabs.connect()

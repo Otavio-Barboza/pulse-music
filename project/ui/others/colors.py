@@ -13,6 +13,7 @@ class Colors:
 
         self.cinza1 = '#aaaaaa'
         self.cinza2 = '#CCCCCC'
+        self.cinza3 = "#8c8c8c"
 
         self.preto1 = '#1f1f1f'
         self.preto2 = '#2a2a2a'
@@ -45,7 +46,7 @@ class Colors:
         self.rosa = '#f10258'
         self.rosa_avermelhado = "#b60037"
 
-        self.vermelho = "#b10000"
+        self.vermelho = "#b32c2c"
         self.vermelho_suave = '#c98a8a'
 
         self.azul_escuro = '#021b33'

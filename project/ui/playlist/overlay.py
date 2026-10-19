@@ -33,14 +33,15 @@ class ContainerOverlay(ft.Container):
         self.page.overlay.append(self.picker)
 
         self.container_color_opacity = ft.Container(
-            col = 4,
-            height = 150,
+            col = 5,
+            height = 75,
             width = 100,
             border_radius = ft.border_radius.all(20),
             bgcolor = ft.Colors.BLACK12
         )
 
         self.opacity_slider = ft.Slider(
+            col = 6,
             on_change = self._change_slider,
             value = 1.0,
             max = 1.0,
@@ -53,7 +54,7 @@ class ContainerOverlay(ft.Container):
 
         self.path_text = ft.Text(
             col = 6,
-            value = "Nenhuma path de musicas selecionada",
+            value = "Nenhuma pasta de musicas selecionada",
             size = 16,
             max_lines = 1,
             text_align = ft.TextAlign.CENTER
@@ -68,9 +69,9 @@ class ContainerOverlay(ft.Container):
         )
 
         self.text_field = ft.TextField(
-            hint_text = "Digite o name da sua playlist...",
+            hint_text = "Digite o nome da sua playlist...",
             hint_style = ft.TextStyle(
-                color = color.cinza1,
+                color = color.cinza3,
                 size = 16
             ),
 
@@ -80,7 +81,7 @@ class ContainerOverlay(ft.Container):
             max_lines = 1,
             multiline = False,
             filled = True,
-            fill_color = color.preto4,
+            fill_color = color.preto9,
             border_color = ft.Colors.TRANSPARENT,
             col = 8,
             
@@ -103,76 +104,192 @@ class ContainerOverlay(ft.Container):
         self.content = ft.Container(
             alignment = ft.alignment.center,
             bgcolor = color.preto8,
-            width = 900,
-            height = 900,
-            border_radius = ft.border_radius.all(20),
-            padding = ft.padding.all(10),
+            expand = True,
+            border_radius = ft.border_radius.all(15),
+            margin = ft.margin.all(10),
 
-            content = ft.Column(
-                spacing = 10,
+            content = ft.ResponsiveRow(
+                vertical_alignment = ft.CrossAxisAlignment.CENTER,
                 alignment = ft.MainAxisAlignment.CENTER,
-                horizontal_alignment = ft.CrossAxisAlignment.CENTER,
+                spacing = 0,
 
                 controls = [
-                    ft.ResponsiveRow(
-                        vertical_alignment = ft.CrossAxisAlignment.CENTER,
-                        alignment = ft.MainAxisAlignment.CENTER,
-                        height = 80,
-
-                        controls = [
-                            self.text_field,
-                            
-                            self._create_button(
-                                click = "path", 
-                                text = "Selecionar Pasta com as Músicas", 
-                                col = 4, 
-                                background_color = color.laranja2, 
-                                text_color = color.branco
-                            )    
-                        ]
-                    ),
-
-                    ft.ResponsiveRow(
-                        alignment = ft.MainAxisAlignment.CENTER,
-                        controls = [
-                            self.text_name,
-                            self.path_text
-                        ]
-                    ),
-
-                    ft.Divider(),
-
+                    # cores, nomes etc
                     ft.Container(
-                        height = 680,
+                        col = 6,
+                        padding = ft.padding.all(35),
 
-                        content = ft.Tabs(
-                            selected_index = 0,
-                            animation_duration = 300,
-                            label_color = color.amarelo,
-                            divider_color = ft.Colors.TRANSPARENT,
-                            indicator_color = ft.Colors.TRANSPARENT,
-                            overlay_color = color.preto8,
-                            unselected_label_color = color.branco_puro,
-                            scrollable = False,
-                            expand = True,
-                            tab_alignment = ft.TabAlignment.FILL,
-                            
+                        content = ft.Column(
+                            horizontal_alignment = ft.CrossAxisAlignment.START,
+                            alignment = ft.MainAxisAlignment.CENTER,
+                            spacing = 5,
+
+                            controls = [
+                                # Campo de texto do nome da playlist
+                                self.text_field,
+                                
+                                # nome da playlist em texto
+                                ft.Container(
+                                    height = 25,
+                                    padding = ft.padding.only(
+                                        left = 15
+                                    ),
+
+                                    content = self.text_name
+                                ),
+                                
+                                # button de selecionar a pasta | # caminho selecionado
+                                ft.Container(
+                                    height = 75,
+                                    alignment = ft.alignment.center,
+                                    margin = ft.margin.only(
+                                        top = 20
+                                    ),
+
+                                    content = ft.ResponsiveRow(
+                                        alignment = ft.MainAxisAlignment.CENTER,
+                                        vertical_alignment = ft.CrossAxisAlignment.CENTER,
+
+                                        controls = [
+                                            self._create_button(
+                                                click = "path",
+                                                col = 5,
+                                                text = "Selecionar Pasta",
+                                                text_color = color.branco_puro,
+                                                background_color = color.preto9
+                                            ),
+                                            self.path_text
+                                        ]
+                                    )
+                                ),
+
+                                # Controle da opacidade.
+                                ft.Container(
+                                    expand = True,
+                                    height = 50,
+                                    alignment = ft.alignment.bottom_center,
+
+                                    content = ft.Text(
+                                        value = "Controle da opacidade de cor de fundo da playlist",
+                                        text_align = ft.TextAlign.CENTER,
+                                        size = 24
+                                    )
+                                ),
+
+                                # container com a cor referencia | # slider
+                                ft.Container(
+                                    height = 100,
+                                    margin = ft.margin.only(
+                                        bottom = 20
+                                    ),
+
+                                    content = ft.ResponsiveRow(
+                                        alignment = ft.MainAxisAlignment.SPACE_AROUND,
+                                        vertical_alignment = ft.CrossAxisAlignment.CENTER,
+
+                                        controls = [
+                                            self.container_color_opacity,
+
+                                            ft.Container(
+                                                height = 75,
+                                                width = 100,
+                                                bgcolor = color.preto9,
+                                                padding = ft.padding.all(10),
+                                                col = 5,
+                                                border_radius = ft.border_radius.all(20),
+                                                content = self.opacity_slider
+                                            )
+                                        ]
+                                    )
+                                ),
+
+                                # Grid de cores.
+
+                                ft.Container(
+                                    height = 400,
+                                    bgcolor = color.cinza3,
+                                    margin = ft.margin.only(
+                                        bottom = 20
+                                    ),
+                                    border_radius = ft.border_radius.all(15),
+
+                                    content = ft.GridView(
+                                        max_extent = 50,
+                                        padding = ft.padding.all(20),
+                                        spacing = 30,
+                                        run_spacing = 30,
+
+                                        controls = [
+                                            self._create_color_card(color) for color in color._paleta_de_cores()
+                                        ]
+                                    )
+                                ),
+
+                                # botões de salvar e cancelar
+                                ft.ResponsiveRow(
+                                    height = 75,
+                                    alignment = ft.MainAxisAlignment.SPACE_AROUND,
+                                    vertical_alignment = ft.CrossAxisAlignment.CENTER,
+                                    
+                                    controls = [
+                                        self._create_button(
+                                            click = "cancel", 
+                                            text = "Cancelar", 
+                                            col = 5,
+                                            background_color = color.vermelho,
+                                            text_color = color.branco
+                                        ),
+
+                                        self._create_button(
+                                            click = "concluir", 
+                                            text = "Concluir", 
+                                            col = 5,
+                                            background_color = color.amarelo,
+                                            text_color = color.preto_puro,
+                                            text_color_hover = color.preto_puro
+                                        )
+                                    ]
+                                )
+                            ]
+                        )
+                    ),
+
+                    # imagens...
+                    ft.Container(
+                        bgcolor = color.cinza3,
+                        padding = ft.padding.all(10),
+                        border_radius = ft.border_radius.only(
+                            top_left = 10,
+                            bottom_left = 10
+                        ),
+                        col = 6,
+
+                        content = ft.Tabs(                            
                             label_text_style = ft.TextStyle(
-                                size = 16,
-                                weight = ft.FontWeight.BOLD,
-                                letter_spacing = 1,
                                 font_family = "sansita"
                             ),
-
+                            label_color = color.branco_puro,
+                            
                             unselected_label_text_style = ft.TextStyle(
-                                weight = ft.FontWeight.W_300
+                                font_family = "google_sans_flex"
                             ),
+                            unselected_label_color = color.branco_suave,
+
+                            divider_color = color.branco_suave,
+                            indicator_color = color.branco_suave,
+
+                            animation_duration = 300,
+                            tab_alignment = ft.TabAlignment.CENTER,
 
                             tabs = [
                                 ft.Tab(
                                     text = "Albuns",
                                     content = ft.GridView(
                                         max_extent = 220,
+                                        spacing = 40,
+                                        run_spacing = 40,
+                                        padding = ft.padding.all(20),
+
                                         controls = [
                                             self._create_image_card(f"{self.paths[0]}/{img}") for img in self.albums
                                         ]
@@ -184,101 +301,34 @@ class ContainerOverlay(ft.Container):
 
                                     content = ft.GridView(
                                         max_extent = 220,
+                                        spacing = 40,
+                                        run_spacing = 40,
+                                        padding = ft.padding.all(20),
 
                                         controls = [
                                             self._create_image_card(f"{self.paths[1]}/{img}") for img in self.covers
                                         ]
                                     )
                                 ),
-
-                                ft.Tab(
-                                    text = "Cor de Fundo da Playlist",
-
-                                    content = ft.Container(
-                                        padding = ft.padding.only(top = 10),
-
-                                        content = ft.Column(
-                                            controls = [
-                                                ft.Container(
-                                                    height = 200,
-                                                    content = ft.ResponsiveRow(
-                                                        vertical_alignment = ft.CrossAxisAlignment.CENTER,
-                                                        controls = [
-                                                            self.container_color_opacity,
-
-                                                            ft.Column(
-                                                                alignment = ft.MainAxisAlignment.CENTER,
-                                                                horizontal_alignment = ft.CrossAxisAlignment.CENTER,
-                                                                col = 8,
-
-                                                                controls = [
-                                                                    ft.Text(
-                                                                        value = "Regule a opacity da color",
-                                                                        size = 16,
-                                                                        text_align = ft.TextAlign.CENTER
-                                                                    ),
-
-                                                                    self.opacity_slider,
-                                                                    
-                                                                    self._create_button(
-                                                                        click = "opacity",
-                                                                        col = None,
-                                                                        text = "Salvar Opacidade",
-                                                                        background_color = color.azul_medio2,
-                                                                        text_color = color.branco
-                                                                    )
-                                                                ]
-                                                            )
-                                                        ]
-                                                    )
-                                                ),
-
-                                                ft.Divider(),
-
-                                                ft.Container(
-                                                    expand = True,
-
-                                                    content = ft.GridView(
-                                                        max_extent = 150,
-
-                                                        controls = [
-                                                            self._create_color_card(color) for color in color._paleta_de_cores()
-                                                        ]
-                                                    )
-                                                )
-                                            ]
-                                        )
-                                    )
-                                )
                             ]
                         )
-                    ),
-
-                    ft.ResponsiveRow(
-                        controls = [
-                            self._create_button(
-                                click = "cancel", 
-                                text = "Cancelar", 
-                                col = 6,
-                                background_color = color.vermelho,
-                                text_color = color.branco
-                            ),
-
-                            self._create_button(
-                                click = "concluir", 
-                                text = "Concluir", 
-                                col = 6,
-                                background_color = color.amarelo,
-                                text_color = color.preto1
-                            )
-                        ]
-                    )
+                    )  
                 ]
             )
         )
 
         if self.mode == PlalistOverlayMode.UPDATE:
             self._fill_in_fields()
+
+
+    def did_mount(self):
+        from core.services.controllers.state_app import StateApp
+        
+        StateApp.notify(
+            event = "set_maximized_window",
+            data = True
+        )
+
 
     def _fill_in_fields(self):
         playlist = self.state.playlist_config  # PlaylistDetalhada
@@ -293,6 +343,7 @@ class ContainerOverlay(ft.Container):
         self.container_color_opacity.opacity = playlist.style["opacity"]
         self.text_name.value = f"Nome da playlist: {playlist.name}"
         self.path_text.value = f"Pasta: {playlist.music['music_path']}"
+
 
     def _create_image_card(self, image):
         card = ft.Container(
@@ -318,26 +369,22 @@ class ContainerOverlay(ft.Container):
 
         self.cards.append(card)
         return card
+
     
     def _create_color_card(self, color : ft.Colors):
         cont = ft.Container(
-            width = 100,
-            height = 100,
-            border_radius = ft.border_radius.all(100),
+            width = 50,
+            height = 50,
+            border_radius = ft.border_radius.all(10),
             bgcolor = color,
             alignment = ft.alignment.center,
             data = color,
-            on_click = self._select_color,
-
-            content = ft.Text(
-                value = color.replace("Colors.", "").upper(),
-                text_align = ft.TextAlign.CENTER,
-                weight = ft.FontWeight.W_300
-            )
+            on_click = self._select_color
         )
 
         self.colors.append(cont)
         return cont
+    
     
     def confirm(self, e):
         if self.mode == PlalistOverlayMode.CREATE:
@@ -352,8 +399,11 @@ class ContainerOverlay(ft.Container):
         click, 
         col: int, 
         text: str, 
+        background_color: str,
         text_color: str, 
-        background_color: str
+        text_color_hover: str = color.branco_suave,
+        width: int = 250,
+        border_color: str | ft.Colors = ft.Colors.TRANSPARENT
     ) -> ft.TextButton:
         if click == "cancel":
             click = self.close_overlay
@@ -361,8 +411,6 @@ class ContainerOverlay(ft.Container):
             click = self.confirm
         elif click == "path":
             click = self.open_selector_path
-        elif click == "opacity":
-            click = self.save_opacity
         else:
             click =  None
         
@@ -371,22 +419,25 @@ class ContainerOverlay(ft.Container):
             text = text,
             on_click = click,
             height = 40,
+            width = width,
 
             style = ft.ButtonStyle(
                 bgcolor = {
-                    ft.ControlState.DEFAULT : ft.Colors.TRANSPARENT,
-                    ft.ControlState.HOVERED : background_color
+                    ft.ControlState.DEFAULT : background_color,
+                    ft.ControlState.HOVERED : ft.Colors.with_opacity(color = background_color, opacity = 0.75)
                 },
                 side = {
-                    ft.ControlState.HOVERED : ft.BorderSide(2, color.branco)
+                    ft.ControlState.HOVERED : ft.BorderSide(2, border_color)
                 },
                 color = {
-                    ft.ControlState.DEFAULT : color.branco,
-                    ft.ControlState.HOVERED : text_color
+                    ft.ControlState.DEFAULT : text_color,
+                    ft.ControlState.HOVERED : text_color_hover
                 },
+                shape = ft.RoundedRectangleBorder(15),
                 padding = ft.padding.all(10)
             )
         )
+
     
     def _select_image(self, e):
         self.state.image = e.control.data
@@ -402,29 +453,12 @@ class ContainerOverlay(ft.Container):
                 card.content.visible = False
             
             card.update()
+
     
     def _change_slider(self, e):
         self.container_color_opacity.opacity = self.opacity_slider.value
         self.container_color_opacity.update()
 
-    def _select_color(self, e):
-        self.state.color = e.control.data
-        self.container_color_opacity.bgcolor = e.control.data
-        self.container_color_opacity.update()
-        
-        for container in self.colors:
-            color = container.content.value
-
-            if container.data == e.control.data:
-                container.scale = 1.1
-                container.content.weight = ft.FontWeight.BOLD
-            else:
-                container.scale = 1.0
-                container.content.weight = ft.FontWeight.W_300
-            
-            container.update()
-
-    def save_opacity(self, e):
         cor_opc = ft.Colors.with_opacity(
             color = self.state.color, 
             opacity = self.container_color_opacity.opacity
@@ -433,22 +467,35 @@ class ContainerOverlay(ft.Container):
         self.state.color = cor_opc
         self.state.opacity = self.container_color_opacity.opacity
 
-        self.page.open(
-            ft.SnackBar(
-                content = ft.Text("Valor de Opacidade Salva")
-            )
-        )
+
+    def _select_color(self, e):
+        self.state.color = e.control.data
+        self.container_color_opacity.bgcolor = e.control.data
+        self.container_color_opacity.update()
+        
+        for container in self.colors:
+            if container.data == e.control.data:
+                container.scale = 1.25
+                container.opacity = 0.75
+            else:
+                container.scale = 1.0
+                container.opacity = 1.0
+            
+            container.update()
+
 
     def _submit_name(self, e):
         self.state.name = self.text_field.value
         self.text_name.value = f"Nome da playlist: {self.text_field.value}"
         self.text_field.value = ""
         self.update()
+
     
     def _change(self, e):
         self.state.name = self.text_field.value
         self.text_name.value = f"Nome da playlist: {self.text_field.value}"
         self.update()
+
 
     def on_directory_selected(self, e: ft.FilePickerResultEvent):
         if e.path in self.check_existing_paths():
@@ -461,8 +508,10 @@ class ContainerOverlay(ft.Container):
             self.path_text.value = f"Pasta selecionada: {e.path}"
             self.path_text.update()
 
+
     def open_selector_path(self, e):
         self.picker.get_directory_path()
+
     
     def close_overlay(self, e):
         self.state.image = r"assets\images\placeholders\capa_playlist_padrao.png"
@@ -474,6 +523,7 @@ class ContainerOverlay(ft.Container):
         self.page.overlay.clear()
         self.page.update()
 
+
     async def start_pipeline(self, path: Path, id: str):
         await asyncio.to_thread(
             Pipeline.start_wrapper_sync,
@@ -482,32 +532,35 @@ class ContainerOverlay(ft.Container):
             id
         )
 
+
     def check_existing_playlists(self) -> list[str]:
         return self.state.return_existngs_playlists()
 
+
     def check_existing_paths(self) -> list[str]:
         return self.state.return_existngs_folders()
+
 
     def create_playlist(self):
         if self.state.name is None:
             UtilsUi.snack_bar(
                 page = self.page,
-                text = "Atribua um name a sua playlist primeiro"
+                text = "Atribua um nome a sua playlist primeiro"
             )
         elif self.state.name in self.check_existing_playlists():
             UtilsUi.snack_bar(
                 page = self.page,
-                text = "Já existe uma playlist com esse name, escolha outro!"
+                text = "Já existe uma playlist com esse nome, escolha outro!"
             )
         elif self.state.path is None:
             UtilsUi.snack_bar(
                 page = self.page,
-                text = "Selecione uma path para criar"
+                text = "Selecione uma pasta para criar"
             )
         elif self.state.path in self.check_existing_paths():
             UtilsUi.snack_bar(
                 page = self.page,
-                text = "Já existe uma playlist com essa path de músicas, escolha outra!"
+                text = "Já existe uma playlist com essa pasta de músicas, escolha outra!"
             )
         else:
             id = self.state.create_playlist()
