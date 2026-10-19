@@ -5,7 +5,8 @@ from ui.utils.utils_ui import UtilsUi
 # imports de back-end
 from core.playlists.enum.playlist_enum import PlalistOverlayMode
 from core.meta.pipeline.pipeline import Pipeline
-
+from core.services.controllers.state_app import StateApp
+        
 # imports gerais
 from pathlib import Path
 import flet as ft
@@ -322,11 +323,20 @@ class ContainerOverlay(ft.Container):
 
 
     def did_mount(self):
-        from core.services.controllers.state_app import StateApp
-        
         StateApp.notify(
             event = "set_maximized_window",
             data = True
+        )
+        StateApp.notify(
+            event = "set_min_width",
+            data = 860
+        )
+        
+
+    def will_unmount(self):
+        StateApp.notify(
+            event = "set_min_width",
+            data = 500
         )
 
 
