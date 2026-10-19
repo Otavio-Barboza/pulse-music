@@ -2,7 +2,7 @@
 from ui.others.overlay_images import OverlayImages
 
 # imports de back-end
-from core.services.controllers.grid_state import GridMode, GridState
+from core.services.controllers.grid_state import GridMode, GridState, OpenGrid
 from core.song.enum.song_enum import ReproductionMode
 from core.meta.cache.global_cache import cache_metadata
 from core.meta.repository.extract_metadata import ExtractMetadata
@@ -173,7 +173,7 @@ class GridImages(ft.GridView):
                 type = 'artist'
             )
 
-            name = data.get(e.control.data).get('artist_name')
+            name = data.get(e.control.data).get('defined_artist')
         else:
             playlist_mode = ReproductionMode.ALBUM
             data = cache_metadata.albums.to_dict()
@@ -196,9 +196,12 @@ class GridImages(ft.GridView):
 
             name = e.control.data
 
-        self.page.overlay.clear()
-        self.page.overlay.append(
-            OverlayImages(
+        GridState.set_current_mode(self.mode)
+        GridState.set_open_grid(OpenGrid.OPEN)
+
+        GridState.notify(
+            event = "alter_grid_content",
+            data = OverlayImages(
                 image_big = img,
                 music = sorted(
                     song_list, 
@@ -208,13 +211,8 @@ class GridImages(ft.GridView):
                 name = name,
                 playlist_mode = playlist_mode,
                 page = self.page
-                # function_update_musics = self._return_song_list
-            )
+            ) 
         )
-        self.page.update()
-
-        # GridState.set_current_mode(playlist_mode)
-        # GridState.set_open_grid_playlist(True)
         
         Reproduction.load_songs_from_mode(
             mode = playlist_mode,

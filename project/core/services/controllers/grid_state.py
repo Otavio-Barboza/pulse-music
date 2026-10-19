@@ -6,12 +6,18 @@ import inspect, asyncio
 class GridMode(Enum):
     ARTIST = 'artist'
     ALBUM = 'album'
+
+
+class OpenGrid(Enum):
+    OPEN = "open"
+    CLOSE = "close"
     
     
 class GridState:
+    # Auxiliares para a trocar de conteúdo das paginas da grid.
+    current_mode: GridMode | None = None
+    open_grid: OpenGrid = OpenGrid.CLOSE
 
-    # current_mode: GridMode | None = None
-    # open_grid_playlist: bool = False
     _callbacks = {}
 
     
@@ -21,6 +27,7 @@ class GridState:
             cls._callbacks[event] = []
         cls._callbacks[event].append(func)
         
+
     @classmethod
     def notify(cls, event: str, data = None):
         if event not in cls._callbacks:
@@ -37,10 +44,12 @@ class GridState:
             except Exception as e:
                 print(e)
 
-    # @classmethod
-    # def set_current_mode(cls, mode: GridMode):
-    #     cls.current_mode = mode
 
-    # @classmethod
-    # def set_open_grid_playlist(cls, value: bool):
-    #     cls.open_grid_playlist = value
+    @classmethod
+    def set_current_mode(cls, mode: GridMode | None):
+        cls.current_mode = mode
+
+
+    @classmethod
+    def set_open_grid(cls, mode: OpenGrid):
+        cls.open_grid = mode

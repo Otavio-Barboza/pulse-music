@@ -3,7 +3,8 @@ from ui.others.colors import color
 from ui.playlist.base.music_list import ListViewMusic
 
 # import de back-end
-from core.services.controllers.grid_state import GridMode
+from core.services.controllers.grid_state import GridMode, OpenGrid, GridState
+from core.services.controllers.resize_manager import ResizeManager
 from core.playlists.controller.playlist_state import PlaylistState
 from core.playlists.enum.playlist_enum import PlaylistLoaded
 
@@ -16,11 +17,10 @@ class OverlayImages(ft.Container):
         self,
         playlist_mode,
         page: ft.Page,
-        mode : GridMode, 
-        image_big : str, 
-        music : list, 
-        name : str,
-        # function_update_musics: callable
+        mode: GridMode, 
+        image_big: str, 
+        music: list, 
+        name: str,
     ):
         super().__init__(
             height = 700,
@@ -34,7 +34,6 @@ class OverlayImages(ft.Container):
         self.playlist_mode = playlist_mode
         self.mode = mode
         self.music = music
-        # self.function_update_musics = function_update_musics
 
         self.content = ft.ResponsiveRow(
             vertical_alignment = ft.CrossAxisAlignment.CENTER,
@@ -46,13 +45,27 @@ class OverlayImages(ft.Container):
             controls = [
                 ft.Container(
                     col = {'md' : 5, 'sm' : 12},
-                    expand = True,
+                    # expand = True,
 
                     content = ft.Column(
                         horizontal_alignment = ft.CrossAxisAlignment.CENTER,
                         alignment = ft.MainAxisAlignment.CENTER,
+                        spacing = 50,
 
                         controls = [
+                            ft.Container(
+                                alignment = ft.alignment.top_left,
+
+                                content = ft.IconButton(
+                                    icon = ft.Icons.CLOSE_OUTLINED,
+                                    style = ft.ButtonStyle(
+                                        color = color.vermelho,
+                                        overlay_color = color.preto4
+                                    ),
+
+                                    on_click = self.close_overlay
+                                )
+                            ),
                             ft.Image(
                                 src_base64 = image_big,
                                 border_radius = ft.border_radius.all(10) if self.mode == GridMode.ARTIST else ft.border_radius.all(10),
@@ -61,8 +74,8 @@ class OverlayImages(ft.Container):
                             ft.Text(
                                 value = name,
                                 text_align = ft.TextAlign.CENTER,
-                                size = 26,
-                                weight = ft.FontWeight.W_500
+                                size = 20,
+                                weight = ft.FontWeight.BOLD
                             )
                         ]
                     )
@@ -103,4 +116,14 @@ class OverlayImages(ft.Container):
                     )
                 )
             ]
+        )
+
+
+    def close_overlay(self, event):
+        GridState.set_current_mode(self.mode)
+        GridState.set_open_grid(OpenGrid.CLOSE)
+
+        GridState.notify(
+            event = "alter_grid_content",
+            data = None
         )

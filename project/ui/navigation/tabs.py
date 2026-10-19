@@ -1,14 +1,15 @@
+# imports de back-end
+from core.services.account_manager import AccountManager
+from core.services.controllers.grid_state import GridState, GridMode, OpenGrid
+from core.services.controllers.resize_manager import ResizeManager
+
 # imports da ui (interface)
 from ui.others.colors import color
 from ui.others.music_search import MusicSearch
 from ui.playlist.base.base_playlists import ColumnCards
 from ui.grid_view.grid import GridImages
 from ui.favorite.favorite import Favorite
-
-# imports de back-end
-from core.services.account_manager import AccountManager
-from core.services.controllers.grid_state import GridMode
-from core.services.controllers.resize_manager import ResizeManager
+from ui.grid_view.grid import OverlayImages
 
 # import geral
 import flet as ft
@@ -88,7 +89,7 @@ class TabsNavigation(ft.Tabs):
             ft.Tab(
                 tab_content = self._labels_tabs[4],
                 content = self.search_music
-            ),
+            )
         ]
 
 
@@ -98,16 +99,27 @@ class TabsNavigation(ft.Tabs):
         self._build_class()
         self.playlist.load()
         self.search_music.load()
-        self.artists.load()
-        self.albums.load()
+        
+        if (
+            isinstance(self.artists, GridImages)
+            and isinstance(self.albums, GridImages)
+        ):
+            self.artists.load()
+            self.albums.load()
+
 
     def reload(self):
         self.playlist.reload_playlists()
         self.artists.load()
         self.albums.load()
 
-        self.artists.update()
-        self.albums.update()
+        if (
+            isinstance(self.artists, GridImages)
+            and isinstance(self.albums, GridImages)
+        ):
+            self.artists.update()
+            self.albums.update()
+
 
     def connect(self):
         from core.favorite.controller.favoritas_controller import FavoriteState
@@ -115,13 +127,24 @@ class TabsNavigation(ft.Tabs):
         # registrando callbacks
         ResizeManager.register(self._adjust_tabs)
         self.playlist.connect()
-        self.artists.connect()
-        self.albums.connect()
+
+        if (
+            isinstance(self.artists, GridImages)
+            and isinstance(self.albums, GridImages)
+        ):
+            self.artists.connect()
+            self.albums.connect()
 
         FavoriteState.register_callback(
             event = "actualization_favorites",
             callback = self.load_favorites
         )
+
+        GridState.register_callback(
+            event = "alter_grid_content",
+            func = self.alter_grid_content
+        )
+        
 
     # CRIAÇÃO DOS ITENS
     def _create_tabs(self):
@@ -134,6 +157,7 @@ class TabsNavigation(ft.Tabs):
             self._labels_tabs.append(label)
             self._icones_tabs.append(icone)
 
+
     def _tab_label(self, icon, texto):
         icone = ft.Icon(icon, size = 18)
 
@@ -142,7 +166,7 @@ class TabsNavigation(ft.Tabs):
             vertical_alignment = ft.CrossAxisAlignment.CENTER,
             spacing = 8,
             
-            controls=[
+            controls = [
                 icone,
                 ft.Text(
                     texto,
@@ -154,6 +178,7 @@ class TabsNavigation(ft.Tabs):
 
         return row, icone
 
+    
     def _adjust_tabs(self, *_):
         compact: float | int = self.page.width < 576
         
@@ -161,6 +186,7 @@ class TabsNavigation(ft.Tabs):
             icon.visible = not compact
 
         self.update()
+
     
     def load_favorites(self, *_):
         from core.song.model.song import Song
@@ -181,3 +207,26 @@ class TabsNavigation(ft.Tabs):
             mode = ReproductionMode.FAVORITE,
             list = list_musics
         )
+
+
+    def alter_grid_content(self, content_expand_grid: OverlayImages | None = None):
+        index = 1 if GridState.current_mode == GridMode.ARTIST else 2
+
+        print(
+            f"[GRID STATE]: index indentificado: {index}"
+        )
+
+        if GridState.open_grid == OpenGrid.CLOSE:
+            self.tabs[index].content = self.artists if GridState.current_mode == GridMode.ARTIST else self.albums
+            self.tabs[index].update()
+            
+            print(
+                f"[TABS]: alterando conteúdo das tabs: voltando para grid"
+            )
+        else:
+            self.tabs[index].content = content_expand_grid
+            self.tabs[index].update()
+            
+            print(
+                f"[TABS]: alterando conteúdo das tabs: abrindo overlay"
+            )
